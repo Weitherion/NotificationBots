@@ -16,7 +16,7 @@ var app = express();
 
 // 加一个全局中间件，明确禁止翻越目录，禁止对 .git .env的访问
 app.use((req, res, next) => {
-    if (req.url.includes('..') || req.url.includes('.git') || req.url.includes('.env') || req.url.includes('config')) {
+    if (req.url.includes('..') || req.url.includes('.git') || req.url.includes('.env')) {
         return res.status(403).send('Forbidden');
     }
     next();

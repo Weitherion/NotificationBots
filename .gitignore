@@ -4,3 +4,5 @@
 node_modules/
 
 logfiles/
+
+ecosystem.config.js

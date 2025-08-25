@@ -46,34 +46,39 @@ class NotificatAllBot {
     setupHandlers() {
         // 监听 /start 命令
         this.bot.start(async (ctx) => {
-            await ctx.reply('Welcome! I can send notifications to alpha.');
+            try {
+                await ctx.reply('Welcome! I can send notifications to alpha.');
+            } catch (err) {
+                logger.error(`ctx.reply error in /start: ${err.message}`);
+            }
             logger.info(`User ${ctx.from.id} ${ctx.from.first_name} started the bot`);
         });
 
         // 监听用户发送的 "hi notBot" 或 "HI notBot" 消息
-        // 如果要在groups中监听，需要开启 group privacy mode，否则只支持私聊
         this.bot.hears(['hi notBot', 'HI notBot'], async (ctx) => {
             logger.info(`Received message ctx: ${JSON.stringify(ctx.chat, null, 2)}`);
-
-            await ctx.reply(`hi, ${ctx.from.first_name} ! How can I assist you now?`);
+            try {
+                await ctx.reply(`hi, ${ctx.from.first_name} ! How can I assist you now?`);
+            } catch (err) {
+                logger.error(`ctx.reply error in hears: ${err.message}`);
+            }
         });
-
 
         // 内联按钮
         this.bot.command("1", async (ctx) => {
-            // ctx.reply('请选择：', Markup.keyboard([
-            //     ['给alpha发短信', '给alpha发邮件'],
-            //     ['取消']
-            // ]).resize());
-
-            ctx.reply('请选择用哪种方式通知alpha：', Markup.inlineKeyboard([
-                [Markup.button.callback('给alpha发邮件', 'send_email')],
-                [Markup.button.callback('给alpha发WhatsApp', 'send_whatsapp')],
-            ]).resize());
+            try {
+                await ctx.reply('请选择用哪种方式通知alpha：', Markup.inlineKeyboard([
+                    [Markup.button.callback('给alpha发邮件', 'send_email')],
+                    [Markup.button.callback('给alpha发WhatsApp', 'send_whatsapp')],
+                ]).resize());
+            } catch (err) {
+                logger.error(`ctx.reply error in /1: ${err.message}`);
+            }
         });
+
         // 处理内联按钮回调
         this.bot.action('send_email', async (ctx) => {
-            await ctx.answerCbQuery(); // 这一步很重要，防止按钮上出现加载动画
+            await ctx.answerCbQuery(); // 回应回调查询，防止按钮加载动画一直转圈
             try {
                 await transporter.sendMail({
                     from: process.env.mail_account,
@@ -81,23 +86,33 @@ class NotificatAllBot {
                     subject: 'bot通知',
                     text: `用户 ${ctx.from.first_name} 找你，时间：${new Date().toLocaleString()}`,
                 });
-                ctx.reply(`已成功给alpha发送邮件`);
+                try {
+                    await ctx.reply(`已成功给alpha发送邮件`);
+                } catch (err) {
+                    logger.error(`ctx.reply error after sendMail: ${err.message}`);
+                }
                 logger.info(`User ${ctx.from.id} ${ctx.from.first_name} sent to alpha successfully via inline button`);
             } catch (err) {
-                ctx.reply(`邮件发送失败: ${err.message}`);
+                try {
+                    await ctx.reply(`邮件发送失败: ${err.message}`);
+                } catch (e) {
+                    logger.error(`ctx.reply error after mail failure: ${e.message}`);
+                }
                 logger.error(`User ${ctx.from.id} ${ctx.from.first_name} send mail failure via inline button: ${err}`);
             }
         });
 
-
         this.bot.action('send_whatsapp', async (ctx) => {
-            await ctx.answerCbQuery(); // 这一步很重要，防止按钮上出现加载动画
-            ctx.reply("该功能开发中。。。");
-
+            await ctx.answerCbQuery();
+            try {
+                await ctx.reply("该功能开发中。。。");
+            } catch (err) {
+                logger.error(`ctx.reply error in send_whatsapp: ${err.message}`);
+            }
         });
     }
-    webhookCallback(path) {
-        return this.bot.webhookCallback(path);
+    webhookCallback() {
+        return this.bot.webhookCallback();
     };
 }
 

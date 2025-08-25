@@ -9,7 +9,7 @@ const logger = getLogger('notificatAllBot.log');
 // 邮箱配置
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
+    port: 465, // vps的安全组出站规则要开放465端口
     secure: true,
     auth: {
         user: process.env.mail_account,
@@ -23,6 +23,7 @@ class NotificatAllBot {
     constructor(token) {
         this.bot = new Telegraf(token);
         this.token = token;
+        this.lastMailTimestamp = 0; // 新增：记录上次发邮件时间
         this.init();            // 生成实例时立即初始化
     }
     async init() {
@@ -34,7 +35,7 @@ class NotificatAllBot {
         try {
             await this.bot.telegram.setMyCommands([
                 { command: '/start', description: 'Start the bot' },
-                { command: '/help', description: 'Do you need help?' },
+                // { command: '/help', description: 'Do you need help?' },
                 { command: '/1', description: 'Choose notification method' }
             ]);
             logger.info('Bot commands set successfully');
@@ -79,6 +80,16 @@ class NotificatAllBot {
         // 处理内联按钮回调
         this.bot.action('send_email', async (ctx) => {
             await ctx.answerCbQuery(); // 回应回调查询，防止按钮加载动画一直转圈
+            const now = Date.now();
+            const interval = 3 * 60 * 1000; // 3分钟
+            if (now - this.lastMailTimestamp < interval) {
+                try {
+                    await ctx.reply('请勿频繁发送邮件，每3分钟只能发送一次。');
+                } catch (err) {
+                    logger.error(`ctx.reply error after mail limit: ${err.message}`);
+                }
+                return;
+            }
             try {
                 await transporter.sendMail({
                     from: process.env.mail_account,
@@ -86,6 +97,7 @@ class NotificatAllBot {
                     subject: 'bot通知',
                     text: `用户 ${ctx.from.first_name} 找你，时间：${new Date().toLocaleString()}`,
                 });
+                this.lastMailTimestamp = now; // 发送成功后更新时间戳
                 try {
                     await ctx.reply(`已成功给alpha发送邮件`);
                 } catch (err) {

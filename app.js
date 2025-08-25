@@ -15,12 +15,12 @@ var app = express();
 // app.set('view engine', 'jade');
 
 // 加一个全局中间件，明确禁止翻越目录，禁止对 .git .env的访问
-// app.use((req, res, next) => {
-//     if (req.url.includes('..') || req.url.includes('.git') || req.url.includes('.env')) {
-//         return res.status(403).send('Forbidden');
-//     }
-//     next();
-// });
+app.use((req, res, next) => {
+    if (req.url.includes('..') || req.url.includes('.git') || req.url.includes('.env') || req.url.includes('config')) {
+        return res.status(403).send('Forbidden');
+    }
+    next();
+});
 
 // ✅ 禁用 "X-Powered-By"
 app.disable('x-powered-by'); 

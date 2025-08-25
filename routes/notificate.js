@@ -10,7 +10,7 @@ const logger = getLogger('notificate.log');
 const notificatAllBot = require('../bots/notificatAllBot');
 const notBot = new notificatAllBot(process.env.notificat_all_bot_token);
 // 把Telegraf机器人的 webhook 处理函数挂载到Express路由 /tronbot 上,  /notificate/notBot
-router.use(notBot.webhookCallback('/notBot'));
+router.use('/notBot', notBot.webhookCallback());
 
 
 /* GET home page. */
